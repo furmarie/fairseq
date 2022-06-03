@@ -387,6 +387,7 @@ def cli_main():
 
     parser.add_argument(
         "--store_path",
+        metavar = "FILE",
         help="Path to store sentences"
     )
 
