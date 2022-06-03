@@ -16,8 +16,13 @@ from itertools import chain
 
 import numpy as np
 import torch
-from fairseq import checkpoint_utils, options, scoring, tasks, utils
-from fairseq.logging import progress_bar
+import fairseq.options as options
+import fairseq.checkpoint_utils as checkpoint_utils
+import fairseq.scoring as scoring
+import fairseq.tasks as tasks
+import fairseq.utils as utils
+# from fairseq import checkpoint_utils, options, scoring, tasks, utils
+from fairseq.logging import  progress_bar
 from fairseq.logging.meters import StopwatchMeter, TimeMeter
 
 
@@ -58,7 +63,7 @@ def _main(args, output_file):
     logger = logging.getLogger("fairseq_cli.generate")
     logger.disabled = True
     utils.import_user_module(args)
-    # logger.setlevel(logging.CRITICAL)
+    logger.setLevel(logging.CRITICAL)
     if args.max_tokens is None and args.batch_size is None:
         args.max_tokens = 12000
     logger.info(args)
@@ -206,7 +211,7 @@ def _main(args, output_file):
 
         for i, sample_id in enumerate(sample["id"].tolist()):
             has_target = sample["target"] is not None
-
+            has_target = None
             # Remove padding
             if "src_tokens" in sample["net_input"]:
                 src_tokens = utils.strip_pad(
@@ -232,19 +237,19 @@ def _main(args, output_file):
                     src_str = src_dict.string(src_tokens, args.remove_bpe)
                 else:
                     src_str = ""
-                if has_target:
-                    target_str = tgt_dict.string(
-                        target_tokens,
-                        args.remove_bpe,
-                        escape_unk=True,
-                        extra_symbols_to_ignore=get_symbols_to_strip_from_output(
-                            generator
-                        ),
-                    )
+                # if has_target:
+                #     target_str = tgt_dict.string(
+                #         target_tokens,
+                #         args.remove_bpe,
+                #         escape_unk=True,
+                #         extra_symbols_to_ignore=get_symbols_to_strip_from_output(
+                #             generator
+                #         ),
+                #     )
 
-            src_str = decode_fn(src_str)
-            if has_target:
-                target_str = decode_fn(target_str)
+            # src_str = decode_fn(src_str)
+            # if has_target:
+            #     target_str = decode_fn(target_str)
 
             # if not args.quiet:
             #     if src_dict is not None:
@@ -260,7 +265,6 @@ def _main(args, output_file):
                     alignment=hypo["alignment"],
                     align_dict=align_dict,
                     tgt_dict=tgt_dict,
-                    remove_bpe=args.remove_bpe,
                     extra_symbols_to_ignore=get_symbols_to_strip_from_output(generator),
                 )
                 detok_hypo_str = decode_fn(hypo_str)
@@ -390,7 +394,8 @@ def cli_main():
         metavar = "FILE",
         help="Path to store sentences"
     )
-
+    parser.add_argument("--generation")
+    # parser.add_argument("--remove-bpe")
     args = options.parse_args_and_arch(parser)
     print(args.store_path, args.quiet)
     # exit(0)
