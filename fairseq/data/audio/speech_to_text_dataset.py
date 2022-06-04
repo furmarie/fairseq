@@ -125,6 +125,7 @@ class SpeechToTextDatasetItem(object):
     source: torch.Tensor
     target: Optional[torch.Tensor] = None
     speaker_id: Optional[int] = None
+    audio_path : Optional[str] = None
 
 
 class SpeechToTextDataset(FairseqDataset):
@@ -292,7 +293,7 @@ class SpeechToTextDataset(FairseqDataset):
         if self.speaker_to_id is not None:
             speaker_id = self.speaker_to_id[self.speakers[index]]
         return SpeechToTextDatasetItem(
-            index=index, source=source, target=target, speaker_id=speaker_id
+            index=index, source=source, target=target, speaker_id=speaker_id, audio_path=self.audio_paths[index]
         )
 
     def __len__(self):
@@ -307,7 +308,11 @@ class SpeechToTextDataset(FairseqDataset):
         frames = _collate_frames([x.source for x in samples], self.cfg.use_audio_input)
         # sort samples by descending number of frames
         n_frames = torch.tensor([x.source.size(0) for x in samples], dtype=torch.long)
-        n_frames, order = n_frames.sort(descending=True)
+        # n_frames, order = n_frames.sort(descending=True)
+
+        #Not sorting samples
+        order = torch.arange(len(n_frames))
+
         indices = indices.index_select(0, order)
         frames = frames.index_select(0, order)
 
@@ -344,6 +349,8 @@ class SpeechToTextDataset(FairseqDataset):
                 .view(-1, 1)
             )
 
+        audio_paths = [x.audio_path for x in samples]
+
         net_input = {
             "src_tokens": frames,
             "src_lengths": n_frames,
@@ -357,6 +364,7 @@ class SpeechToTextDataset(FairseqDataset):
             "target_lengths": target_lengths,
             "ntokens": ntokens,
             "nsentences": len(samples),
+            "audio_path" : audio_paths
         }
         if return_order:
             out["order"] = order
